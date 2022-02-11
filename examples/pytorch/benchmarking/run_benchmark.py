@@ -96,12 +96,12 @@ class CustomBenchmark(PyTorchBenchmark):
         model.train()
         model.to(self.args.device)
 
-#          pg = dist.new_group(ranks=[self.args.local_rank], backend="nccl")
+        pg = dist.new_group(backend="nccl")
         model = torch.nn.parallel.DistributedDataParallel(
             model,
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False,
-#              process_group=pg,
+            process_group=pg,
             )
         optimizer = optim.SGD(
             model.parameters(),
