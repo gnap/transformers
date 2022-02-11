@@ -16,11 +16,17 @@
 # limitations under the License.
 """ Benchmarking the library on inference and training """
 
+from dataclasses import dataclass, field
 from transformers import HfArgumentParser, PyTorchBenchmark, PyTorchBenchmarkArguments
+
+@dataclass
+class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
+
+    local_rank: int = field(default=0, metadata={"local_rank": "local rank of the worker process"})
 
 
 def main():
-    parser = HfArgumentParser(PyTorchBenchmarkArguments)
+    parser = HfArgumentParser(CustomBenchmarkArguments)
     try:
         benchmark_args = parser.parse_args_into_dataclasses()[0]
     except ValueError as e:
