@@ -60,6 +60,11 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         return device, n_gpu
 
     @property
+    @torch_required
+    def device(self) -> "torch.device":
+        return self._setup_devices[0]
+
+    @property
     def device_idx(self) -> int:
         # TODO(PVP): currently only single GPU is supported
         # return torch.cuda.current_device()
@@ -69,13 +74,13 @@ class CustomBenchmark(PyTorchBenchmark):
 
     def _train_speed(self, model_name: str, batch_size: int, sequence_length: int) -> float:
         group = dist.new_group(backend="nccl")
-        _train = self._prepare_train_func(group, model_name, batch_size, sequence_length)
+        _train = self._prepare_train_func2(group, model_name, batch_size, sequence_length)
         speed = self._measure_speed(_train)
         dist.destroy_process_group(group)
         dist.barrier()
         return speed
 
-    def _prepare_train_func(self, pg, model_name: str, batch_size: int, sequence_length: int) -> Callable[[], None]:
+    def _prepare_train_func2(self, pg, model_name: str, batch_size: int, sequence_length: int) -> Callable[[], None]:
         config = self.config_dict[model_name]
 
         has_model_class_in_config = (
