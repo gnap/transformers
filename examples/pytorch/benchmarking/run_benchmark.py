@@ -19,7 +19,7 @@
 from dataclasses import dataclass, field
 from typing import Tuple
 from transformers.file_utils import cached_property, is_torch_available, is_torch_tpu_available, torch_required
-from ..utils import logging
+from transformers.utils import logging
 from transformers import HfArgumentParser, PyTorchBenchmark, PyTorchBenchmarkArguments
 
 if is_torch_available():
