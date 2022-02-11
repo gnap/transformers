@@ -67,7 +67,15 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
 
 class CustomBenchmark(PyTorchBenchmark):
 
-    def _prepare_train_func(self, model_name: str, batch_size: int, sequence_length: int) -> Callable[[], None]:
+    def _train_speed(self, model_name: str, batch_size: int, sequence_length: int) -> float:
+        group = dist.new_group(backend="nccl")
+        _train = self._prepare_train_func(group, model_name, batch_size, sequence_length)
+        speed = self._measure_speed(_train)
+        dist.destroy_process_group(group)
+        dist.barrier()
+        return speed
+
+    def _prepare_train_func(self, pg, model_name: str, batch_size: int, sequence_length: int) -> Callable[[], None]:
         config = self.config_dict[model_name]
 
         has_model_class_in_config = (
@@ -96,7 +104,6 @@ class CustomBenchmark(PyTorchBenchmark):
         model.train()
         model.to(self.args.device)
 
-        pg = dist.new_group(backend="nccl")
         model = torch.nn.parallel.DistributedDataParallel(
             model,
             device_ids=[torch.cuda.current_device()],
