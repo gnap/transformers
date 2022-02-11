@@ -17,7 +17,18 @@
 """ Benchmarking the library on inference and training """
 
 from dataclasses import dataclass, field
+from typing import Tuple
+from transformers.file_utils import cached_property, is_torch_available, is_torch_tpu_available, torch_required
+from ..utils import logging
 from transformers import HfArgumentParser, PyTorchBenchmark, PyTorchBenchmarkArguments
+
+if is_torch_available():
+    import torch
+
+if is_torch_tpu_available():
+    import torch_xla.core.xla_model as xm
+
+logger = logging.get_logger(__name__)
 
 @dataclass
 class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
@@ -28,6 +39,27 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
 
     local_rank: int = field(default=0, metadata={"help": "local rank of the worker process"})
 
+    @cached_property
+    @torch_required
+    def _setup_devices(self) -> Tuple["torch.device", int]:
+        logger.info("PyTorch: setting up devices")
+        if not self.cuda:
+            device = torch.device("cpu")
+            n_gpu = 0
+        elif is_torch_tpu_available():
+            device = xm.xla_device()
+            n_gpu = 0
+        else:
+            # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device("cuda:" + str(self.local_rank) if torch.cuda.is_available() else "cpu")
+            n_gpu = torch.cuda.device_count()
+        return device, n_gpu
+
+    @property
+    def device_idx(self) -> int:
+        # TODO(PVP): currently only single GPU is supported
+        # return torch.cuda.current_device()
+        return self.local_rank
 
 def main():
     parser = HfArgumentParser(CustomBenchmarkArguments)
