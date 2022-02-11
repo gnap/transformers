@@ -63,7 +63,6 @@ class PyTorchBenchmarkArguments(BenchmarkArguments):
         self.fp16_opt_level = kwargs.pop("fp16_opt_level", self.fp16_opt_level)
         super().__init__(**kwargs)
 
-    local_rank: int = field(default=0, metadata={"local_rank": "local rank of the worker process"})
     torchscript: bool = field(default=False, metadata={"help": "Trace the models using torchscript"})
     torch_xla_tpu_print_metrics: bool = field(default=False, metadata={"help": "Print Xla/PyTorch tpu metrics"})
     fp16_opt_level: str = field(

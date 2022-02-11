@@ -22,6 +22,10 @@ from transformers import HfArgumentParser, PyTorchBenchmark, PyTorchBenchmarkArg
 @dataclass
 class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
 
+    def __init__(self, **kwargs):
+        self.local_rank = kwargs.pop("local_rank", self.locak_rank)
+        super().__init__(**kwargs)
+
     local_rank: int = field(default=0, metadata={"local_rank": "local rank of the worker process"})
 
 
