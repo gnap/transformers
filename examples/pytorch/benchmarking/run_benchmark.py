@@ -18,9 +18,13 @@
 
 from dataclasses import dataclass, field
 from typing import Tuple
+from typing import Callable, Optional
 from transformers.file_utils import cached_property, is_torch_available, is_torch_tpu_available, torch_required
 from transformers.utils import logging
 from transformers import HfArgumentParser, PyTorchBenchmark, PyTorchBenchmarkArguments
+from transformers.models.auto.modeling_auto import MODEL_MAPPING, MODEL_WITH_LM_HEAD_MAPPING
+import torch.optim as optim
+import torch.distributed as dist
 
 if is_torch_available():
     import torch
@@ -61,6 +65,82 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         # return torch.cuda.current_device()
         return self.local_rank
 
+class CustomBenchmark(PyTorchBenchmark):
+
+    def _prepare_train_func(self, model_name: str, batch_size: int, sequence_length: int) -> Callable[[], None]:
+        config = self.config_dict[model_name]
+
+        has_model_class_in_config = (
+            hasattr(config, "architectures")
+            and isinstance(config.architectures, list)
+            and len(config.architectures) > 0
+        )
+        if not self.args.only_pretrain_model and has_model_class_in_config:
+            try:
+                model_class = config.architectures[0]
+                transformers_module = __import__("transformers", fromlist=[model_class])
+                model_cls = getattr(transformers_module, model_class)
+                model = model_cls(config)
+            except ImportError:
+                raise ImportError(
+                    f"{model_class} does not exist. If you just want to test the pretrained model, you might want to set `--only_pretrain_model` or `args.only_pretrain_model=True`."
+                )
+        else:
+            model = MODEL_WITH_LM_HEAD_MAPPING[config.__class__](config)
+
+        if self.args.torchscript:
+            raise NotImplementedError("Training for torchscript is currently not implemented")
+        else:
+            train_model = model
+
+        model.train()
+        model.to(self.args.device)
+
+        pg = dist.new_group(ranks=[self.args.local_rank], backend="nccl")
+        model = torch.nn.parallel.DistributedDataParallel(
+            model,
+            device_ids=[torch.cuda.current_device()],
+            broadcast_buffers=False,
+            process_group=pg,
+            )
+        optimizer = optim.SGD(
+            model.parameters(),
+            0.001,
+            momentum=0.9,
+            weight_decay=1e-4)
+
+        # encoder-decoder has vocab size saved differently
+        vocab_size = config.vocab_size if hasattr(config, "vocab_size") else config.encoder.vocab_size
+        input_ids = torch.randint(vocab_size, (batch_size, sequence_length), dtype=torch.long, device=self.args.device)
+
+        if self.args.fp16:
+            logger.info("Running training in Mixed Precision...")
+            if not self.args.is_gpu:
+                raise ValueError("Mixed precision is possible only for GPU.")
+
+            # amp seems to have memory leaks so that memory usage
+            # is measured using .half() for now https://github.com/NVIDIA/apex/issues/439
+            model.half()
+
+        def compute_loss_and_backprob_encoder():
+            loss = train_model(input_ids, labels=input_ids)[0]
+            loss.backward()
+            optimizer.step()
+            return loss
+
+        def compute_loss_and_backprob_encoder_decoder():
+            loss = train_model(input_ids, decoder_input_ids=input_ids, labels=input_ids)[0]
+            loss.backward()
+            optimizer.step()
+            return loss
+
+        _train = (
+            compute_loss_and_backprob_encoder_decoder
+            if config.is_encoder_decoder
+            else compute_loss_and_backprob_encoder
+        )
+        return _train
+
 def main():
     parser = HfArgumentParser(CustomBenchmarkArguments)
     try:
@@ -82,7 +162,12 @@ def main():
             full_error_msg = full_error_msg + begin_error_msg + str(wrong_args)
         raise ValueError(full_error_msg)
 
-    benchmark = PyTorchBenchmark(args=benchmark_args)
+    dist.init_process_group(
+        backend="gloo",
+        init_method="env://",
+    )
+
+    benchmark = CustomBenchmark(args=benchmark_args)
     benchmark.run()
 
 
