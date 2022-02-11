@@ -26,7 +26,7 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         self.local_rank = kwargs.pop("local_rank", self.local_rank)
         super().__init__(**kwargs)
 
-    local_rank: int = field(default=0, metadata={"local_rank": "local rank of the worker process"})
+    local_rank: int = field(default=0, metadata={"help": "local rank of the worker process"})
 
 
 def main():
