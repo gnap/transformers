@@ -108,7 +108,7 @@ class CustomBenchmark(PyTorchBenchmark):
 
         model = torch.nn.parallel.DistributedDataParallel(
             model,
-            device_ids=[torch.cuda.current_device()],
+            device_ids=[self.args.device_idx],
             broadcast_buffers=False,
             process_group=pg,
             )
