@@ -101,10 +101,7 @@ class CustomBenchmark(PyTorchBenchmark):
         else:
             model = MODEL_WITH_LM_HEAD_MAPPING[config.__class__](config)
 
-        if self.args.torchscript:
-            raise NotImplementedError("Training for torchscript is currently not implemented")
-        else:
-            train_model = model
+
 
         model.train()
         model.to(self.args.device)
@@ -133,6 +130,11 @@ class CustomBenchmark(PyTorchBenchmark):
             # amp seems to have memory leaks so that memory usage
             # is measured using .half() for now https://github.com/NVIDIA/apex/issues/439
             model.half()
+
+        if self.args.torchscript:
+            raise NotImplementedError("Training for torchscript is currently not implemented")
+        else:
+            train_model = model
 
         def compute_loss_and_backprob_encoder():
             loss = train_model(input_ids, labels=input_ids)[0]
