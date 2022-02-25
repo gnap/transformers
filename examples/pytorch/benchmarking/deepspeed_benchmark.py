@@ -172,8 +172,8 @@ class CustomBenchmark(PyTorchBenchmark):
         dp_args = deepcopy(self.args)
         dp_args.per_device_train_batch_size = batch_size / dp_args.world_size
         self.hf_deepspeed_config = HfTrainerDeepSpeedConfig('tests/deepspeed/ds_config_zero3.json')
-        self.hf_deepspeed_config.trainer_config_process(self.args)
-        self.hf_deepspeed_config.trainer_config_finalize(self.args, model, self.args.max_steps)
+        self.hf_deepspeed_config.trainer_config_process(dp_args)
+        self.hf_deepspeed_config.trainer_config_finalize(dp_args, model, dp_args.max_steps)
         model_engine, optimizer, _, _ = deepspeed.initialize(config_params=self.hf_deepspeed_config.config,
                                                              model=model,
                                                              model_parameters=model.parameters())
