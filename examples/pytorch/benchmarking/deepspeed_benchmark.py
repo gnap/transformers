@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Benchmarking the library on inference and training """
 
+from copy import deepcopy
 import math
 import deepspeed
 from dataclasses import dataclass, field
@@ -168,6 +169,8 @@ class CustomBenchmark(PyTorchBenchmark):
 
         # will be used later by the Trainer
         # note: leave self.deepspeed unmodified in case a user relies on it not to be modified)
+        dp_args = deepcopy(self.args)
+        dp_args.per_device_train_batch_size = batch_size / dp_args.world_size
         self.hf_deepspeed_config = HfTrainerDeepSpeedConfig('tests/deepspeed/ds_config_zero3.json')
         self.hf_deepspeed_config.trainer_config_process(self.args)
         self.hf_deepspeed_config.trainer_config_finalize(self.args, model, self.args.max_steps)
@@ -182,13 +185,13 @@ class CustomBenchmark(PyTorchBenchmark):
 
         def compute_loss_and_backprob_encoder():
             loss = model_engine(input_ids, labels=input_ids)[0]
-            loss.backward()
+            model_engine.backward(loss)
             optimizer.step()
             return loss
 
         def compute_loss_and_backprob_encoder_decoder():
             loss = model_engine(input_ids, decoder_input_ids=input_ids, labels=input_ids)[0]
-            loss.backward()
+            model_engine.backward(loss)
             optimizer.step()
             return loss
 
