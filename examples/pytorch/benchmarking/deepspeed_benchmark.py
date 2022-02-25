@@ -107,7 +107,7 @@ class CustomBenchmark(PyTorchBenchmark):
         model.train()
         model.to(self.args.device)
 
-        cmd_args=[]
+        cmd_args=['--deepspeed_config', 'tests/deepspeed/ds_config_zero3.json']
         model_engine, optimizer, _, _ = deepspeed.initialize(args=cmd_args,
                                                              model=model,
                                                              model_parameters=model.parameters())
