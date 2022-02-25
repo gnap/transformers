@@ -40,8 +40,10 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
 
     def __init__(self, **kwargs):
         self.local_rank = kwargs.pop("local_rank", self.local_rank)
+        self.deepspeed_config = kwargs.pop("deepspeed_config", self.deepspeed_config)
         super().__init__(**kwargs)
 
+    deepspeed_config: str = field(default='tests/deepspeed/ds_config_zero3.json', metadata={"help": "deepspeed_config file"})
     local_rank: int = field(default=0, metadata={"help": "local rank of the worker process"})
 
     @cached_property
@@ -107,8 +109,7 @@ class CustomBenchmark(PyTorchBenchmark):
         model.train()
         model.to(self.args.device)
 
-        cmd_args=['--deepspeed_config', 'tests/deepspeed/ds_config_zero3.json']
-        model_engine, optimizer, _, _ = deepspeed.initialize(args=cmd_args,
+        model_engine, optimizer, _, _ = deepspeed.initialize(args=self.args,
                                                              model=model,
                                                              model_parameters=model.parameters())
 
