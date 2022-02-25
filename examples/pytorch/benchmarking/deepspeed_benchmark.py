@@ -23,7 +23,6 @@ from typing import Callable, Optional
 from transformers.file_utils import cached_property, is_torch_available, is_torch_tpu_available, torch_required
 from transformers.utils import logging
 from transformers import HfArgumentParser, PyTorchBenchmark, PyTorchBenchmarkArguments, PretrainedConfig
-from transformers.training_args import TrainingArguments
 from transformers.benchmark.benchmark_args_utils import BenchmarkArguments
 from transformers.models.auto.modeling_auto import MODEL_MAPPING, MODEL_WITH_LM_HEAD_MAPPING
 import torch.optim as optim
@@ -76,11 +75,6 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         return self.local_rank
 
 class CustomBenchmark(PyTorchBenchmark):
-    training_args: TrainingArguments
-
-    def __init__(self, args: BenchmarkArguments = None, configs: PretrainedConfig = None, training_args: TrainingArguments = None):
-        self.training_args = training_args
-        super(self, PyTorchBenchmark).__init__(args=args, configs=configs)
 
     def _train_speed(self, model_name: str, batch_size: int, sequence_length: int) -> float:
         _train = self._prepare_train_func(model_name, batch_size, sequence_length)
@@ -121,7 +115,7 @@ class CustomBenchmark(PyTorchBenchmark):
         # will be used later by the Trainer
         # note: leave self.deepspeed unmodified in case a user relies on it not to be modified)
         self.hf_deepspeed_config = HfTrainerDeepSpeedConfig('tests/deepspeed/ds_config_zero3.json')
-        self.hf_deepspeed_config.trainer_config_process(self.training_args)
+        self.hf_deepspeed_config.trainer_config_process(self.args)
 
         model_engine, optimizer, _, _ = deepspeed.initialize(config_params=self.hf_deepspeed_config.config,
                                                              model=model,
@@ -152,9 +146,9 @@ class CustomBenchmark(PyTorchBenchmark):
         return _train
 
 def main():
-    parser = HfArgumentParser((CustomBenchmarkArguments, TrainingArguments))
+    parser = HfArgumentParser(CustomBenchmarkArguments)
     try:
-        benchmark_args, training_args = parser.parse_args_into_dataclasses()[:1]
+        benchmark_args = parser.parse_args_into_dataclasses()[0]
     except ValueError as e:
         arg_error_msg = "Arg --no_{0} is no longer used, please use --no-{0} instead."
         begin_error_msg = " ".join(str(e).split(" ")[:-1])
@@ -174,7 +168,7 @@ def main():
 
     deepspeed.init_distributed()
 
-    benchmark = CustomBenchmark(args=benchmark_args, training_args=training_args)
+    benchmark = CustomBenchmark(args=benchmark_args)
     benchmark.run()
 
 
