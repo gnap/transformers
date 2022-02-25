@@ -59,7 +59,7 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
     adam_beta1: float = field(default=0.9, metadata={"help": "Beta1 for AdamW optimizer"})
     adam_beta2: float = field(default=0.999, metadata={"help": "Beta2 for AdamW optimizer"})
     adam_epsilon: float = field(default=1e-8, metadata={"help": "Epsilon for AdamW optimizer."})
-t 
+ 
     fp16_opt_level: str = field(
         default="O1",
         metadata={
