@@ -24,7 +24,7 @@ from transformers.file_utils import cached_property, is_torch_available, is_torc
 from transformers.utils import logging
 from transformers import HfArgumentParser, PyTorchBenchmark, PyTorchBenchmarkArguments, PretrainedConfig
 from transformers.training_args import TrainingArguments
-from transformers.benchmark_args_utils import BenchmarkArguments
+from transformers.benchmark.benchmark_args_utils import BenchmarkArguments
 from transformers.models.auto.modeling_auto import MODEL_MAPPING, MODEL_WITH_LM_HEAD_MAPPING
 import torch.optim as optim
 import torch.distributed as dist
