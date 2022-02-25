@@ -53,6 +53,7 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         default=1,
         metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
     )
+    max_grad_norm: float = field(default=1.0, metadata={"help": "Max gradient norm."})
 
     @property
     @torch_required
