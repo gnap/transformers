@@ -54,6 +54,11 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
     )
     max_grad_norm: float = field(default=1.0, metadata={"help": "Max gradient norm."})
+    max_steps: int = field(
+        default=-1,
+        metadata={"help": "If > 0: set total number of training steps to perform. Override num_train_epochs."},
+    )
+
     learning_rate: float = field(default=5e-5, metadata={"help": "The initial learning rate for AdamW."})
     weight_decay: float = field(default=0.0, metadata={"help": "Weight decay for AdamW if we apply some."})
     adam_beta1: float = field(default=0.9, metadata={"help": "Beta1 for AdamW optimizer"})
@@ -152,7 +157,7 @@ class CustomBenchmark(PyTorchBenchmark):
         # note: leave self.deepspeed unmodified in case a user relies on it not to be modified)
         self.hf_deepspeed_config = HfTrainerDeepSpeedConfig('tests/deepspeed/ds_config_zero3.json')
         self.hf_deepspeed_config.trainer_config_process(self.args)
-
+        self.hf_deepspeed_config.trainer_config_finalize(self.args, model, self.args.max_steps)
         model_engine, optimizer, _, _ = deepspeed.initialize(config_params=self.hf_deepspeed_config.config,
                                                              model=model,
                                                              model_parameters=model.parameters())
