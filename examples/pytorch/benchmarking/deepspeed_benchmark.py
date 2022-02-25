@@ -109,7 +109,14 @@ class CustomBenchmark(PyTorchBenchmark):
         model.train()
         model.to(self.args.device)
 
-        model_engine, optimizer, _, _ = deepspeed.initialize(args=self.args,
+        from transformers.deepspeed import HfTrainerDeepSpeedConfig
+
+        # will be used later by the Trainer
+        # note: leave self.deepspeed unmodified in case a user relies on it not to be modified)
+        self.hf_deepspeed_config = HfTrainerDeepSpeedConfig('tests/deepspeed/ds_config_zero3.json')
+        self.hf_deepspeed_config.trainer_config_process(self.args)
+
+        model_engine, optimizer, _, _ = deepspeed.initialize(config_params=self.hf_deepspeed_config.config,
                                                              model=model,
                                                              model_parameters=model.parameters())
 
