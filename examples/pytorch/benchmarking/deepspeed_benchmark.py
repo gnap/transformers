@@ -46,6 +46,25 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
 
     deepspeed_config: str = field(default='tests/deepspeed/ds_config_zero3.json', metadata={"help": "deepspeed_config file"})
     local_rank: int = field(default=0, metadata={"help": "local rank of the worker process"})
+    per_device_train_batch_size: int = field(
+        default=8, metadata={"help": "Batch size per GPU/TPU core/CPU for training."}
+    )
+    gradient_accumulation_steps: int = field(
+        default=1,
+        metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
+    )
+
+    @property
+    @torch_required
+    def world_size(self):
+        """
+        The number of processes used in parallel.
+        """
+        if is_torch_tpu_available():
+            return xm.xrt_world_size()
+        elif self.local_rank != -1:
+            return torch.distributed.get_world_size()
+        return 1
 
     @cached_property
     @torch_required
