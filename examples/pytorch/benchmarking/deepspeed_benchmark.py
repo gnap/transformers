@@ -54,6 +54,22 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         metadata={"help": "Number of updates steps to accumulate before performing a backward/update pass."},
     )
     max_grad_norm: float = field(default=1.0, metadata={"help": "Max gradient norm."})
+    learning_rate: float = field(default=5e-5, metadata={"help": "The initial learning rate for AdamW."})
+    weight_decay: float = field(default=0.0, metadata={"help": "Weight decay for AdamW if we apply some."})
+    adam_beta1: float = field(default=0.9, metadata={"help": "Beta1 for AdamW optimizer"})
+    adam_beta2: float = field(default=0.999, metadata={"help": "Beta2 for AdamW optimizer"})
+    adam_epsilon: float = field(default=1e-8, metadata={"help": "Epsilon for AdamW optimizer."})
+t 
+    fp16_opt_level: str = field(
+        default="O1",
+        metadata={
+            "help": (
+                "For fp16: Apex AMP optimization level selected in ['O0', 'O1', 'O2', and 'O3']. "
+                "See details at https://nvidia.github.io/apex/amp.html"
+            )
+        },
+    )
+
 
     @property
     @torch_required
