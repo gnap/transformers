@@ -16,6 +16,7 @@
 # limitations under the License.
 """ Benchmarking the library on inference and training """
 
+import math
 import deepspeed
 from dataclasses import dataclass, field
 from typing import Tuple
@@ -64,7 +65,11 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
     adam_beta1: float = field(default=0.9, metadata={"help": "Beta1 for AdamW optimizer"})
     adam_beta2: float = field(default=0.999, metadata={"help": "Beta2 for AdamW optimizer"})
     adam_epsilon: float = field(default=1e-8, metadata={"help": "Epsilon for AdamW optimizer."})
- 
+    warmup_ratio: float = field(
+        default=0.0, metadata={"help": "Linear warmup over warmup_ratio fraction of total steps."}
+    )
+    warmup_steps: int = field(default=0, metadata={"help": "Linear warmup over warmup_steps."})
+
     fp16_opt_level: str = field(
         default="O1",
         metadata={
@@ -75,6 +80,14 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         },
     )
 
+    def get_warmup_steps(self, num_training_steps: int):
+        """
+        Get number of steps used for a linear warmup.
+        """
+        warmup_steps = (
+            self.warmup_steps if self.warmup_steps > 0 else math.ceil(num_training_steps * self.warmup_ratio)
+        )
+        return warmup_steps
 
     @property
     @torch_required
