@@ -234,6 +234,8 @@ def main():
             full_error_msg = full_error_msg + begin_error_msg + str(wrong_args)
         raise ValueError(full_error_msg)
 
+    print('local_rank:', benchmark_args.local_rank)
+
     deepspeed.init_distributed()
 
     benchmark = CustomBenchmark(args=benchmark_args)
