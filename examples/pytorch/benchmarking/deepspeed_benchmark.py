@@ -165,7 +165,8 @@ class CustomBenchmark(PyTorchBenchmark):
                 )
         else:
             model = MODEL_WITH_LM_HEAD_MAPPING[config.__class__](config)
-
+        from deepspeed.runtime.zero.stage3 import estimate_zero3_model_states_mem_needs_all_live
+        estimate_zero3_model_states_mem_needs_all_live(model, num_gpus_per_node=8, num_nodes=1)
         if self.args.torchscript:
             raise NotImplementedError("Training for torchscript is currently not implemented")
         else:
