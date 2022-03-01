@@ -172,7 +172,7 @@ class CustomBenchmark(PyTorchBenchmark):
             train_model = model
 
         model.train()
-        model.to(self.args.device)
+        # model.to(self.args.device)
 
         from transformers.deepspeed import HfTrainerDeepSpeedConfig
 
