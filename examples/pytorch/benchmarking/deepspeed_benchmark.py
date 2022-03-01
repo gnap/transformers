@@ -46,7 +46,7 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
 #          self.deepspeed_config = kwargs.pop("deepspeed_config", self.deepspeed_config)
 #          super(CustomBenchmarkArguments, self).__init__(**kwargs)
 #
-    deepspeed_config: str = field(default='tests/deepspeed/ds_config_zero3.json', metadata={"help": "deepspeed_config file"})
+    deepspeed_config: str = field(default='tests/deepspeed/ds_config_zero2.json', metadata={"help": "deepspeed_config file"})
     local_rank: int = field(default=0, metadata={"help": "local rank of the worker process"})
     per_device_train_batch_size: int = field(
         default=8, metadata={"help": "Batch size per GPU/TPU core/CPU for training."}
