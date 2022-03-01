@@ -81,6 +81,15 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
         },
     )
 
+    fp16_backend: str = field(
+        default="auto",
+        metadata={"help": "Deprecated. Use half_precision_backend instead", "choices": ["auto", "amp", "apex"]},
+    )
+    half_precision_backend: str = field(
+        default="auto",
+        metadata={"help": "The backend to be used for half precision.", "choices": ["auto", "amp", "apex"]},
+    )
+
     def get_warmup_steps(self, num_training_steps: int):
         """
         Get number of steps used for a linear warmup.
