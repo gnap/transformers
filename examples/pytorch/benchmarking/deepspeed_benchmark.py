@@ -195,13 +195,15 @@ class CustomBenchmark(PyTorchBenchmark):
         def compute_loss_and_backprob_encoder():
             loss = model_engine(input_ids, labels=input_ids)[0]
             model_engine.backward(loss)
-            optimizer.step()
+            model_engine.step()
+            # optimizer.step()
             return loss
 
         def compute_loss_and_backprob_encoder_decoder():
             loss = model_engine(input_ids, decoder_input_ids=input_ids, labels=input_ids)[0]
             model_engine.backward(loss)
-            optimizer.step()
+            model_engine.step()
+            # optimizer.step()
             return loss
 
         _train = (
