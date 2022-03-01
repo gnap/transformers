@@ -43,6 +43,18 @@ class CustomBenchmarkArguments(PyTorchBenchmarkArguments):
 
     local_rank: int = field(default=0, metadata={"help": "local rank of the worker process"})
 
+    @property
+    @torch_required
+    def world_size(self):
+        """
+        The number of processes used in parallel.
+        """
+        if is_torch_tpu_available():
+            return xm.xrt_world_size()
+        elif self.local_rank != -1:
+            return torch.distributed.get_world_size()
+        return 1
+
     @cached_property
     @torch_required
     def _setup_devices(self) -> Tuple["torch.device", int]:
@@ -120,7 +132,7 @@ class CustomBenchmark(PyTorchBenchmark):
 
         # encoder-decoder has vocab size saved differently
         vocab_size = config.vocab_size if hasattr(config, "vocab_size") else config.encoder.vocab_size
-        input_ids = torch.randint(vocab_size, (batch_size, sequence_length), dtype=torch.long, device=self.args.device)
+        input_ids = torch.randint(vocab_size, (int(batch_size/self.args.world_size), sequence_length), dtype=torch.long, device=self.args.device)
 
         if self.args.fp16:
             logger.info("Running training in Mixed Precision...")
