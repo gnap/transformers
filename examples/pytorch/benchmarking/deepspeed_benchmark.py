@@ -189,7 +189,7 @@ class CustomBenchmark(PyTorchBenchmark):
 
         # encoder-decoder has vocab size saved differently
         vocab_size = config.vocab_size if hasattr(config, "vocab_size") else config.encoder.vocab_size
-        input_ids = torch.randint(vocab_size, (dp_args.per_device_train_batch_size, sequence_length), dtype=torch.long, device=self.args.device)
+        input_ids = torch.randint(vocab_size, (int(dp_args.per_device_train_batch_size), sequence_length), dtype=torch.long, device=self.args.device)
 
 
         def compute_loss_and_backprob_encoder():
