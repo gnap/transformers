@@ -132,7 +132,7 @@ class CustomBenchmark(PyTorchBenchmark):
 
         # encoder-decoder has vocab size saved differently
         vocab_size = config.vocab_size if hasattr(config, "vocab_size") else config.encoder.vocab_size
-        input_ids = torch.randint(vocab_size, (batch_size, sequence_length), dtype=torch.long, device=self.args.device)
+        input_ids = torch.randint(vocab_size, (int(batch_size/self.args.world_size), sequence_length), dtype=torch.long, device=self.args.device)
 
         if self.args.fp16:
             logger.info("Running training in Mixed Precision...")
